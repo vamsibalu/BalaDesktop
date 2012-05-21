@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:WindowedApplication xmlns:fx="http://ns.adobe.com/mxml/2009" 
+					   xmlns:s="library://ns.adobe.com/flex/spark" 
+					   xmlns:mx="library://ns.adobe.com/flex/mx"
+					   creationComplete="windowedapplication1_creationCompleteHandler(event)">
+	
+	<s:states>
+		<s:State name="loggedout"/>
+		<s:State name="loggedin"/>
+	</s:states>
+	
+	<fx:Script>
+		<![CDATA[
+			import com.facebook.graph.FacebookDesktop;
+			
+			import mx.events.FlexEvent;
+
+			protected function windowedapplication1_creationCompleteHandler(event:FlexEvent):void
+			{
+				FacebookDesktop.init("404922902864346",loginHandler);
+				// TODO Auto-generated method stub
+			}
+			
+			protected function loginHandler(success:Object,fail:Object):void
+			{
+				if(success){
+					currentState="loggedin";
+					nameLbl.text=success.user.name;
+					userImg.source=FacebookDesktop.getImageUrl(success.uid,"small");
+					birthdayLbl.text=success.user.birthday;
+					FacebookDesktop.api("/me/statuses",getStatusHandler);
+				}
+			}
+			protected function login():void
+			{
+				FacebookDesktop.login(loginHandler,["user_birthday","read_stream","publish_stream"]);
+			}
+			protected function logout():void
+			{
+				FacebookDesktop.logout();
+				currentState="loggedout";
+			}
+			
+			protected function getStatusHandler(result:Object, fail:Object):void
+			{
+				statusLbl.text=result[0].message;	
+			}
+			protected function submitPost():void
+			{
+				FacebookDesktop.api("/me/feed",submitPostHandler,{message:statusInput.text},"POST");
+			}
+			protected function submitPostHandler(result:Object,fail:Object):void
+			{
+				statusInput.text="";
+				FacebookDesktop.api("/me/statuses",getStatusHandler);
+			}
+
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	
+	<s:Button id="loginoutBtn" right="10" top="10" label="Log out"
+			  skinClass.loggedin="skins.FBLogoutButtonSkin"
+			  skinClass.loggedout="skins.FBLoginButtonSkin"
+			  click.loggedin="logout()"
+			  label.loggedout="Log in" click.loggedout="login()"/>
+	<mx:Form includeIn="loggedin" left="70" top="10">
+		<mx:FormItem label="User">
+			<s:Label id="nameLbl"/>
+		</mx:FormItem>
+		<mx:FormItem label="Birthday">
+			<s:Label id="birthdayLbl"/>
+		</mx:FormItem>
+		<mx:FormItem label="Status">
+			<s:Label id="statusLbl"/>
+		</mx:FormItem>
+		<mx:FormItem label="Post status">
+			
+			<s:TextInput id="statusInput"/>
+			<s:Button label="Submit" click="submitPost()"/>
+		</mx:FormItem>
+	</mx:Form>
+	<mx:Image id="userImg" includeIn="loggedin" left="10" top="10" width="50"/>
+</s:WindowedApplication>
